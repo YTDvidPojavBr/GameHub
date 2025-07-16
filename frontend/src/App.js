@@ -23,6 +23,7 @@ const categories = [
 ];
 
 function App() {
+  const [isAdmin, setIsAdmin] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [games, setGames] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
