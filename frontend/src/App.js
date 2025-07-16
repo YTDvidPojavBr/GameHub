@@ -6,16 +6,65 @@ import CategoryFilter from './components/CategoryFilter';
 import AdminPanel from './components/AdminPanel';
 import StatsPanel from './components/StatsPanel';
 import GameDetails from './components/GameDetails';
-import { mockGames, mockCategories, mockStats } from './mock/games';
+import { gameService } from './services/gameService';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
+const categories = [
+  'Todos',
+  'RPG',
+  'Ação',
+  'FPS',
+  'Aventura',
+  'Estratégia',
+  'Esporte',
+  'Corrida',
+  'Simulação'
+];
+
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [games, setGames] = useState(mockGames);
+  const [games, setGames] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedGame, setSelectedGame] = useState(null);
-  const [stats, setStats] = useState(mockStats);
+  const [stats, setStats] = useState({
+    totalGames: 0,
+    totalDownloads: 0,
+    topGame: { title: 'N/A', clicks: 0 },
+    recentActivity: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Load games on component mount
+  useEffect(() => {
+    loadGames();
+  }, []);
+
+  // Load games from API
+  const loadGames = async () => {
+    try {
+      setLoading(true);
+      const gamesData = await gameService.getAllGames();
+      setGames(gamesData);
+      await loadStats();
+    } catch (error) {
+      toast.error('Erro ao carregar jogos', {
+        description: 'Não foi possível carregar a lista de jogos'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load statistics
+  const loadStats = async () => {
+    try {
+      const statsData = await gameService.getStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   // Filter games by category
   const filteredGames = selectedCategory === 'Todos' 
@@ -29,33 +78,34 @@ function App() {
   };
 
   // Handle game download (increment click counter)
-  const handleDownload = (game) => {
-    // Increment click counter
-    setGames(prevGames => 
-      prevGames.map(g => 
-        g.id === game.id 
-          ? { ...g, clicks: g.clicks + 1 }
-          : g
-      )
-    );
-    
-    // Update stats
-    setStats(prevStats => ({
-      ...prevStats,
-      totalDownloads: prevStats.totalDownloads + 1,
-      recentActivity: [
-        { game: game.title, clicks: 1, timestamp: new Date().toISOString() },
-        ...prevStats.recentActivity.slice(0, 2)
-      ]
-    }));
-    
-    // Open download link
-    window.open(game.downloadLink, '_blank');
-    
-    // Show success toast
-    toast.success(`Download iniciado: ${game.title}`, {
-      description: 'O link foi aberto em uma nova aba'
-    });
+  const handleDownload = async (game) => {
+    try {
+      await gameService.incrementDownload(game.id);
+      
+      // Update local state
+      setGames(prevGames => 
+        prevGames.map(g => 
+          g.id === game.id 
+            ? { ...g, clicks: g.clicks + 1 }
+            : g
+        )
+      );
+      
+      // Reload stats
+      await loadStats();
+      
+      // Open download link
+      window.open(game.downloadLink, '_blank');
+      
+      // Show success toast
+      toast.success(`Download iniciado: ${game.title}`, {
+        description: 'O link foi aberto em uma nova aba'
+      });
+    } catch (error) {
+      toast.error('Erro ao processar download', {
+        description: 'Tente novamente mais tarde'
+      });
+    }
   };
 
   // Handle game details view
@@ -65,55 +115,72 @@ function App() {
   };
 
   // Handle add new game
-  const handleAddGame = (gameData) => {
-    const newGame = {
-      id: Date.now().toString(),
-      ...gameData,
-      clicks: 0,
-      dateAdded: new Date().toISOString()
-    };
-    
-    setGames(prevGames => [newGame, ...prevGames]);
-    setStats(prevStats => ({
-      ...prevStats,
-      totalGames: prevStats.totalGames + 1
-    }));
-    
-    toast.success('Jogo adicionado com sucesso!', {
-      description: `${gameData.title} foi adicionado à biblioteca`
-    });
+  const handleAddGame = async (gameData) => {
+    try {
+      const newGame = await gameService.createGame(gameData);
+      setGames(prevGames => [newGame, ...prevGames]);
+      await loadStats();
+      
+      toast.success('Jogo adicionado com sucesso!', {
+        description: `${gameData.title} foi adicionado à biblioteca`
+      });
+    } catch (error) {
+      toast.error('Erro ao adicionar jogo', {
+        description: 'Verifique os dados e tente novamente'
+      });
+    }
   };
 
   // Handle update game
-  const handleUpdateGame = (gameId, updatedData) => {
-    setGames(prevGames =>
-      prevGames.map(game =>
-        game.id === gameId 
-          ? { ...game, ...updatedData }
-          : game
-      )
-    );
-    
-    toast.success('Jogo atualizado com sucesso!', {
-      description: 'As alterações foram salvas'
-    });
+  const handleUpdateGame = async (gameId, updatedData) => {
+    try {
+      const updatedGame = await gameService.updateGame(gameId, updatedData);
+      setGames(prevGames =>
+        prevGames.map(game =>
+          game.id === gameId ? updatedGame : game
+        )
+      );
+      
+      toast.success('Jogo atualizado com sucesso!', {
+        description: 'As alterações foram salvas'
+      });
+    } catch (error) {
+      toast.error('Erro ao atualizar jogo', {
+        description: 'Tente novamente mais tarde'
+      });
+    }
   };
 
   // Handle delete game
-  const handleDeleteGame = (gameId) => {
-    setGames(prevGames => prevGames.filter(game => game.id !== gameId));
-    setStats(prevStats => ({
-      ...prevStats,
-      totalGames: prevStats.totalGames - 1
-    }));
-    
-    toast.success('Jogo removido com sucesso!', {
-      description: 'O jogo foi removido da biblioteca'
-    });
+  const handleDeleteGame = async (gameId) => {
+    try {
+      await gameService.deleteGame(gameId);
+      setGames(prevGames => prevGames.filter(game => game.id !== gameId));
+      await loadStats();
+      
+      toast.success('Jogo removido com sucesso!', {
+        description: 'O jogo foi removido da biblioteca'
+      });
+    } catch (error) {
+      toast.error('Erro ao remover jogo', {
+        description: 'Tente novamente mais tarde'
+      });
+    }
   };
 
   // Calculate total downloads
   const totalDownloads = games.reduce((sum, game) => sum + game.clicks, 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Carregando jogos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
@@ -137,7 +204,7 @@ function App() {
             </div>
             
             <CategoryFilter 
-              categories={mockCategories}
+              categories={categories}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
               gameCount={filteredGames.length}
@@ -156,8 +223,12 @@ function App() {
             
             {filteredGames.length === 0 && (
               <div className="text-center py-16">
-                <h3 className="text-gray-400 text-xl">Nenhum jogo encontrado nesta categoria</h3>
-                <p className="text-gray-500 mt-2">Tente selecionar outra categoria</p>
+                <h3 className="text-gray-400 text-xl">
+                  {games.length === 0 ? 'Nenhum jogo cadastrado ainda' : 'Nenhum jogo encontrado nesta categoria'}
+                </h3>
+                <p className="text-gray-500 mt-2">
+                  {games.length === 0 ? 'Adicione alguns jogos no painel administrativo' : 'Tente selecionar outra categoria'}
+                </p>
               </div>
             )}
           </div>
@@ -188,12 +259,7 @@ function App() {
             
             <StatsPanel 
               games={games}
-              stats={{
-                ...stats,
-                totalGames: games.length,
-                totalDownloads: totalDownloads,
-                topGame: games.reduce((max, game) => game.clicks > max.clicks ? game : max, games[0])
-              }}
+              stats={stats}
             />
           </div>
         )}
