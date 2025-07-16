@@ -7,7 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { mockCategories } from '../mock/games';
+
+const categories = [
+  'RPG',
+  'Ação',
+  'FPS',
+  'Aventura',
+  'Estratégia',
+  'Esporte',
+  'Corrida',
+  'Simulação'
+];
 
 const AdminPanel = ({ games, onAddGame, onUpdateGame, onDeleteGame }) => {
   const [isEditing, setIsEditing] = useState(null);
@@ -88,7 +98,7 @@ const AdminPanel = ({ games, onAddGame, onUpdateGame, onDeleteGame }) => {
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
-                    {mockCategories.filter(cat => cat !== 'Todos').map((category) => (
+                    {categories.map((category) => (
                       <SelectItem key={category} value={category} className="text-white">
                         {category}
                       </SelectItem>
