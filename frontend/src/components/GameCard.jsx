@@ -5,6 +5,12 @@ import { Button } from './ui/button';
 import { Download, Eye } from 'lucide-react';
 
 const GameCard = ({ game, onDownload, onViewDetails }) => {
+  // Corrigido: primeiro abre o link, depois chama o callback
+  const handleDownloadClick = () => {
+    window.open(game.downloadLink, '_blank');
+    onDownload(game);
+  };
+
   return (
     <Card className="bg-gray-900 border-gray-800 hover:border-purple-500 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 group">
       <CardHeader className="p-0">
@@ -20,14 +26,16 @@ const GameCard = ({ game, onDownload, onViewDetails }) => {
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="p-4">
         <CardTitle className="text-white text-lg mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
           {game.title}
         </CardTitle>
+
         <p className="text-gray-400 text-sm mb-4 line-clamp-3 leading-relaxed">
           {game.description}
         </p>
-        
+
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center text-gray-500 text-sm">
             <Eye className="w-4 h-4 mr-1" />
@@ -37,19 +45,19 @@ const GameCard = ({ game, onDownload, onViewDetails }) => {
             {new Date(game.dateAdded).toLocaleDateString('pt-BR')}
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <Button
-            onClick={() => onDownload(game)}
+            onClick={handleDownloadClick}
             className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 transform hover:scale-105"
           >
             <Download className="w-4 h-4 mr-2" />
             Download
           </Button>
+          
           <Button
             onClick={() => onViewDetails(game)}
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200"
+            className="flex-1 border border-gray-700 bg-gray-800 text-white hover:bg-gray-700 transition-all duration-200"
           >
             Detalhes
           </Button>
