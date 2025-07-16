@@ -36,17 +36,19 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Load games on component mount
+  // Verifica admin no localStorage
+  useEffect(() => {
+    const adminStatus = localStorage.getItem("admin");
+    if (adminStatus === "true") {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  // Carrega jogos
   useEffect(() => {
     loadGames();
   }, []);
-useEffect(() => {
-  const adminStatus = localStorage.getItem("admin");
-  if (adminStatus === "true") {
-    setIsAdmin(true);
-  }
-}, []);
-  // Load games from API
+
   const loadGames = async () => {
     try {
       setLoading(true);
@@ -62,48 +64,36 @@ useEffect(() => {
     }
   };
 
-  // Load statistics
   const loadStats = async () => {
     try {
       const statsData = await gameService.getStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('Erro ao carregar estatísticas:', error);
     }
   };
 
-  // Filter games by category
-  const filteredGames = selectedCategory === 'Todos' 
-    ? games 
+  const filteredGames = selectedCategory === 'Todos'
+    ? games
     : games.filter(game => game.category === selectedCategory);
 
-  // Handle navigation
   const handleNavigation = (page) => {
     setCurrentPage(page);
     setSelectedGame(null);
   };
 
-  // Handle game download (increment click counter)
   const handleDownload = async (game) => {
     try {
       await gameService.incrementDownload(game.id);
-      
-      // Update local state
-      setGames(prevGames => 
-        prevGames.map(g => 
-          g.id === game.id 
+      setGames(prevGames =>
+        prevGames.map(g =>
+          g.id === game.id
             ? { ...g, clicks: g.clicks + 1 }
             : g
         )
       );
-      
-      // Reload stats
       await loadStats();
-      
-      // Open download link
       window.open(game.downloadLink, '_blank');
-      
-      // Show success toast
       toast.success(`Download iniciado: ${game.title}`, {
         description: 'O link foi aberto em uma nova aba'
       });
@@ -114,19 +104,16 @@ useEffect(() => {
     }
   };
 
-  // Handle game details view
   const handleViewDetails = (game) => {
     setSelectedGame(game);
     setCurrentPage('details');
   };
 
-  // Handle add new game
   const handleAddGame = async (gameData) => {
     try {
       const newGame = await gameService.createGame(gameData);
       setGames(prevGames => [newGame, ...prevGames]);
       await loadStats();
-      
       toast.success('Jogo adicionado com sucesso!', {
         description: `${gameData.title} foi adicionado à biblioteca`
       });
@@ -137,7 +124,6 @@ useEffect(() => {
     }
   };
 
-  // Handle update game
   const handleUpdateGame = async (gameId, updatedData) => {
     try {
       const updatedGame = await gameService.updateGame(gameId, updatedData);
@@ -146,7 +132,6 @@ useEffect(() => {
           game.id === gameId ? updatedGame : game
         )
       );
-      
       toast.success('Jogo atualizado com sucesso!', {
         description: 'As alterações foram salvas'
       });
@@ -157,13 +142,11 @@ useEffect(() => {
     }
   };
 
-  // Handle delete game
   const handleDeleteGame = async (gameId) => {
     try {
       await gameService.deleteGame(gameId);
       setGames(prevGames => prevGames.filter(game => game.id !== gameId));
       await loadStats();
-      
       toast.success('Jogo removido com sucesso!', {
         description: 'O jogo foi removido da biblioteca'
       });
@@ -174,7 +157,6 @@ useEffect(() => {
     }
   };
 
-  // Calculate total downloads
   const totalDownloads = games.reduce((sum, game) => sum + game.clicks, 0);
 
   if (loading) {
@@ -196,8 +178,43 @@ useEffect(() => {
         totalGames={games.length}
         totalDownloads={totalDownloads}
       />
-      
+
       <main className="container mx-auto px-4 py-8">
+        {/* Botões de Admin */}
+        <div className="mb-6 flex justify-center gap-4">
+          {!isAdmin && (
+            <button
+              onClick={() => {
+                const senha = prompt("Digite a senha de admin:");
+                if (senha === "2025") {
+                  localStorage.setItem("admin", "true");
+                  setIsAdmin(true);
+                  alert("Você está logado como admin!");
+                } else {
+                  alert("Senha incorreta.");
+                }
+              }}
+              className="p-2 bg-purple-600 text-white rounded"
+            >
+              🔐 Entrar como Admin
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                localStorage.removeItem("admin");
+                setIsAdmin(false);
+                alert("Você saiu do modo admin!");
+              }}
+              className="p-2 bg-red-600 text-white rounded"
+            >
+              🚪 Sair do Admin
+            </button>
+          )}
+        </div>
+
+        {/* Página inicial */}
         {currentPage === 'home' && (
           <div className="space-y-8">
             <div className="text-center space-y-4">
@@ -208,14 +225,14 @@ useEffect(() => {
                 Descubra e baixe os melhores jogos para PC. Biblioteca sempre atualizada com os lançamentos mais recentes.
               </p>
             </div>
-            
+
             <CategoryFilter 
               categories={categories}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
               gameCount={filteredGames.length}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredGames.map(game => (
                 <GameCard 
@@ -226,7 +243,7 @@ useEffect(() => {
                 />
               ))}
             </div>
-            
+
             {filteredGames.length === 0 && (
               <div className="text-center py-16">
                 <h3 className="text-gray-400 text-xl">
@@ -239,33 +256,15 @@ useEffect(() => {
             )}
           </div>
         )}
-{!isAdmin && (
-  <button
-    onClick={() => {
-      const senha = prompt("Digite a senha de admin:");
-      if (senha === "2025") {
-        localStorage.setItem("admin", "true");
-        setIsAdmin(true);
-        alert("Você está logado como admin!");
-      } else {
-        alert("Senha incorreta.");
-      }
-    }}
-    className="p-2 bg-purple-600 text-white rounded"
-  >
-    🔐 Entrar como Admin
-  </button>
-)}
-        
-        {currentPage === 'admin' && (
+
+        {/* Painel Administrativo */}
+        {currentPage === 'admin' && isAdmin && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
               <p className="text-gray-400">Gerencie os jogos da biblioteca</p>
             </div>
-          
-            
-         {isAdmin && <AdminPanel />}
+            <AdminPanel 
               games={games}
               onAddGame={handleAddGame}
               onUpdateGame={handleUpdateGame}
@@ -273,21 +272,22 @@ useEffect(() => {
             />
           </div>
         )}
-        
-        {currentPage === 'stats' && (
+
+        {/* Estatísticas */}
+        {currentPage === 'stats' && isAdmin && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold text-white">Estatísticas</h1>
               <p className="text-gray-400">Acompanhe o desempenho dos downloads</p>
             </div>
-            
-         {isAdmin && <StatsPanel />}
+            <StatsPanel 
               games={games}
               stats={stats}
             />
           </div>
         )}
-        
+
+        {/* Detalhes do jogo */}
         {currentPage === 'details' && selectedGame && (
           <GameDetails 
             game={selectedGame}
@@ -296,7 +296,7 @@ useEffect(() => {
           />
         )}
       </main>
-      
+
       <Toaster 
         position="top-right"
         toastOptions={{
