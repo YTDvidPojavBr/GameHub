@@ -239,14 +239,7 @@ useEffect(() => {
             )}
           </div>
         )}
-        
-        {currentPage === 'admin' && (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
-              <p className="text-gray-400">Gerencie os jogos da biblioteca</p>
-            </div>
-          {!isAdmin && (
+{!isAdmin && (
   <button
     onClick={() => {
       const senha = prompt("Digite a senha de admin:");
@@ -263,8 +256,16 @@ useEffect(() => {
     🔐 Entrar como Admin
   </button>
 )}
+        
+        {currentPage === 'admin' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
+              <p className="text-gray-400">Gerencie os jogos da biblioteca</p>
+            </div>
+          
             
-            <AdminPanel 
+         {isAdmin && <AdminPanel />}
               games={games}
               onAddGame={handleAddGame}
               onUpdateGame={handleUpdateGame}
@@ -280,7 +281,7 @@ useEffect(() => {
               <p className="text-gray-400">Acompanhe o desempenho dos downloads</p>
             </div>
             
-            <StatsPanel 
+         {isAdmin && <StatsPanel />}
               games={games}
               stats={stats}
             />
