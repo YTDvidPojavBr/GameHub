@@ -36,7 +36,6 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Verifica admin no localStorage
   useEffect(() => {
     const adminStatus = localStorage.getItem("admin");
     if (adminStatus === "true") {
@@ -44,7 +43,6 @@ function App() {
     }
   }, []);
 
-  // Carrega jogos
   useEffect(() => {
     loadGames();
   }, []);
@@ -172,7 +170,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <Header 
+      <Header
         onNavigate={handleNavigation}
         currentPage={currentPage}
         totalGames={games.length}
@@ -180,41 +178,41 @@ function App() {
       />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Botões de Admin */}
-        <div className="mb-6 flex justify-center gap-4">
-          {!isAdmin && (
-            <button
-              onClick={() => {
-                const senha = prompt("Digite a senha de admin:");
-                if (senha === "2025") {
-                  localStorage.setItem("admin", "true");
-                  setIsAdmin(true);
-                  alert("Você está logado como admin!");
-                } else {
-                  alert("Senha incorreta.");
-                }
-              }}
-              className="p-2 bg-purple-600 text-white rounded"
-            >
-              🔐 Entrar como Admin
-            </button>
-          )}
+        {/* Login Admin */}
+        {currentPage === 'home' && (
+          <div className="text-center mb-8">
+            {!isAdmin ? (
+              <button
+                onClick={() => {
+                  const senha = prompt("Digite a senha de admin:");
+                  if (senha === "2025") {
+                    localStorage.setItem("admin", "true");
+                    setIsAdmin(true);
+                    alert("Você está logado como admin!");
+                  } else {
+                    alert("Senha incorreta.");
+                  }
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded"
+              >
+                🔐 Entrar como Admin
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  localStorage.removeItem("admin");
+                  setIsAdmin(false);
+                  alert("Você saiu do modo admin!");
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded"
+              >
+                🚪 Sair do Admin
+              </button>
+            )}
+          </div>
+        )}
 
-          {isAdmin && (
-            <button
-              onClick={() => {
-                localStorage.removeItem("admin");
-                setIsAdmin(false);
-                alert("Você saiu do modo admin!");
-              }}
-              className="p-2 bg-red-600 text-white rounded"
-            >
-              🚪 Sair do Admin
-            </button>
-          )}
-        </div>
-
-        {/* Página inicial */}
+        {/* Página Inicial */}
         {currentPage === 'home' && (
           <div className="space-y-8">
             <div className="text-center space-y-4">
@@ -226,7 +224,7 @@ function App() {
               </p>
             </div>
 
-            <CategoryFilter 
+            <CategoryFilter
               categories={categories}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
@@ -235,7 +233,7 @@ function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredGames.map(game => (
-                <GameCard 
+                <GameCard
                   key={game.id}
                   game={game}
                   onDownload={handleDownload}
@@ -257,39 +255,46 @@ function App() {
           </div>
         )}
 
-        {/* Painel Administrativo */}
-        {currentPage === 'admin' && isAdmin && (
+        {/* Painel Admin */}
+        {currentPage === 'admin' && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
               <p className="text-gray-400">Gerencie os jogos da biblioteca</p>
             </div>
-            <AdminPanel 
-              games={games}
-              onAddGame={handleAddGame}
-              onUpdateGame={handleUpdateGame}
-              onDeleteGame={handleDeleteGame}
-            />
+
+            {isAdmin ? (
+              <AdminPanel
+                games={games}
+                onAddGame={handleAddGame}
+                onUpdateGame={handleUpdateGame}
+                onDeleteGame={handleDeleteGame}
+              />
+            ) : (
+              <p className="text-center text-gray-300">Acesso restrito. Faça login como admin.</p>
+            )}
           </div>
         )}
 
         {/* Estatísticas */}
-        {currentPage === 'stats' && isAdmin && (
+        {currentPage === 'stats' && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold text-white">Estatísticas</h1>
               <p className="text-gray-400">Acompanhe o desempenho dos downloads</p>
             </div>
-            <StatsPanel 
-              games={games}
-              stats={stats}
-            />
+
+            {isAdmin ? (
+              <StatsPanel games={games} stats={stats} />
+            ) : (
+              <p className="text-center text-gray-300">Acesso restrito. Faça login como admin.</p>
+            )}
           </div>
         )}
 
         {/* Detalhes do jogo */}
         {currentPage === 'details' && selectedGame && (
-          <GameDetails 
+          <GameDetails
             game={selectedGame}
             onBack={() => setCurrentPage('home')}
             onDownload={handleDownload}
@@ -297,7 +302,7 @@ function App() {
         )}
       </main>
 
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           style: {
