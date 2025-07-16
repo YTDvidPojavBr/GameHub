@@ -246,6 +246,23 @@ useEffect(() => {
               <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
               <p className="text-gray-400">Gerencie os jogos da biblioteca</p>
             </div>
+          {!isAdmin && (
+  <button
+    onClick={() => {
+      const senha = prompt("Digite a senha de admin:");
+      if (senha === "2025") {
+        localStorage.setItem("admin", "true");
+        setIsAdmin(true);
+        alert("Você está logado como admin!");
+      } else {
+        alert("Senha incorreta.");
+      }
+    }}
+    className="p-2 bg-purple-600 text-white rounded"
+  >
+    🔐 Entrar como Admin
+  </button>
+)}
             
             <AdminPanel 
               games={games}
