@@ -40,7 +40,12 @@ function App() {
   useEffect(() => {
     loadGames();
   }, []);
-
+useEffect(() => {
+  const adminStatus = localStorage.getItem("admin");
+  if (adminStatus === "true") {
+    setIsAdmin(true);
+  }
+}, []);
   // Load games from API
   const loadGames = async () => {
     try {
