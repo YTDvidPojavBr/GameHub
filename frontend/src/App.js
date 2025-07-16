@@ -20,7 +20,6 @@ const categories = [
   'Esporte',
   'Corrida',
   'Simulação', 
-  'Luta', 
 ];
 
 function App() {
