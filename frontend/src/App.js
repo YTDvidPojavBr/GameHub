@@ -19,7 +19,8 @@ const categories = [
   'Estratégia',
   'Esporte',
   'Corrida',
-  'Simulação'
+  'Simulação', 
+  'Luta', 
 ];
 
 function App() {
